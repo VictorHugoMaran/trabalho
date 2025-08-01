@@ -4,59 +4,150 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Análise de Notas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+    }
+    button {
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #student-fields {
+      margin: 20px 0;
+    }
+    .result {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
+  <h1>Análise de Notas</h1>
+  
+  <div class="input-group">
+    <label for="student-count">Quantos alunos?</label>
+    <input type="number" id="student-count" min="1" required>
+    <button id="generate-btn">Gerar Campos</button>
+  </div>
 
-  <h2>Notas dos Alunos</h2>
-  <label>Quantos alunos? <input type="number" id="qtde" /></label>
-  <button onclick="criarCampos()">Confirmar</button>
-  <div id="form"></div>
-  <button onclick="analisar()">Analisar</button>
+  <div id="student-fields"></div>
+
+  <button id="analyze-btn" disabled>Analisar Notas</button>
+
+  <div id="result" class="result" style="display: none;"></div>
 
   <script>
-    function criarCampos() {
-      const qtde = parseInt(document.getElementById("qtde").value);
-      const form = document.getElementById("form");
-      form.innerHTML = "";
-      for (let i = 0; i < qtde; i++) {
-        form.innerHTML += `
-          <p>Nome: <input type="text" id="nome${i}"> 
-          Nota: <input type="number" id="nota${i}" step="0.1"></p>
+    document.addEventListener('DOMContentLoaded', () => {
+      const generateBtn = document.getElementById('generate-btn');
+      const analyzeBtn = document.getElementById('analyze-btn');
+      const studentCountInput = document.getElementById('student-count');
+      const studentFields = document.getElementById('student-fields');
+      const resultDiv = document.getElementById('result');
+
+      generateBtn.addEventListener('click', generateFields);
+      analyzeBtn.addEventListener('click', analyzeGrades);
+
+      function generateFields() {
+        const studentCount = parseInt(studentCountInput.value);
+        
+        if (isNaN(studentCount) || studentCount <= 0) {
+          alert('Por favor, insira um número válido de alunos!');
+          return;
+        }
+
+        let fieldsHTML = '';
+        for (let i = 0; i < studentCount; i++) {
+          fieldsHTML += `
+            <div class="input-group">
+              <label for="student-name-${i}">Nome do Aluno ${i + 1}:</label>
+              <input type="text" id="student-name-${i}" required>
+              
+              <label for="student-grade-${i}">Nota (0-10):</label>
+              <input type="number" id="student-grade-${i}" min="0" max="10" step="0.1" required>
+            </div>
+          `;
+        }
+
+        studentFields.innerHTML = fieldsHTML;
+        analyzeBtn.disabled = false;
+        resultDiv.style.display = 'none';
+      }
+
+      function analyzeGrades() {
+        const studentCount = parseInt(studentCountInput.value);
+        const students = [];
+        let allValid = true;
+
+        for (let i = 0; i < studentCount; i++) {
+          const name = document.getElementById(`student-name-${i}`).value.trim();
+          const grade = parseFloat(document.getElementById(`student-grade-${i}`).value);
+
+          if (!name || isNaN(grade)) {
+            allValid = false;
+            break;
+          }
+
+          students.push({ name, grade });
+        }
+
+        if (!allValid || students.length === 0) {
+          alert('Por favor, preencha todos os campos corretamente!');
+          return;
+        }
+
+        const grades = students.map(student => student.grade);
+        const average = grades.reduce((sum, grade) => sum + grade, 0) / grades.length;
+        const aboveAverage = grades.filter(grade => grade > average).length;
+        const above7 = grades.filter(grade => grade > 7).length;
+        const approved = grades.filter(grade => grade >= 6).length;
+
+        const maxGrade = Math.max(...grades);
+        const minGrade = Math.min(...grades);
+        const bestStudent = students.find(student => student.grade === maxGrade).name;
+        const worstStudent = students.find(student => student.grade === minGrade).name;
+
+        const standardDeviation = calculateStandardDeviation(grades, average);
+
+        resultDiv.innerHTML = `
+          <h2>Resultados</h2>
+          <p><strong>Média da turma:</strong> ${average.toFixed(2)}</p>
+          <p><strong>Alunos acima da média:</strong> ${aboveAverage}</p>
+          <p><strong>Porcentagem com nota > 7:</strong> ${((above7 / studentCount) * 100).toFixed(1)}%</p>
+          <p><strong>Total de aprovados:</strong> ${approved}</p>
+          <p><strong>Desvio padrão:</strong> ${standardDeviation}</p>
+          <p><strong>Melhor desempenho:</strong> ${bestStudent} (${maxGrade.toFixed(1)})</p>
+          <p><strong>Pior desempenho:</strong> ${worstStudent} (${minGrade.toFixed(1)})</p>
         `;
-      }
-    }
-
-    function analisar() {
-      const qtde = parseInt(document.getElementById("qtde").value);
-      let nomes = [], notas = [];
-      for (let i = 0; i < qtde; i++) {
-        nomes.push(document.getElementById(`nome${i}`).value);
-        notas.push(parseFloat(document.getElementById(`nota${i}`).value));
+        
+        resultDiv.style.display = 'block';
       }
 
-      const media = notas.reduce((a,b) => a+b, 0) / notas.length;
-      const acimaMedia = notas.filter(n => n > media).length;
-      const maiorQue7 = notas.filter(n => n > 7).length;
-      const aprovados = notas.filter(n => n >= 6).length;
-
-      const max = Math.max(...notas);
-      const min = Math.min(...notas);
-      const alunoMax = nomes[notas.indexOf(max)];
-      const alunoMin = nomes[notas.indexOf(min)];
-
-      const dp = Math.sqrt(notas.reduce((s, n) => s + Math.pow(n - media, 2), 0) / notas.length).toFixed(2);
-
-      alert(`
-Média: ${media.toFixed(2)}
-Acima da média: ${acimaMedia}
-% com nota > 7: ${(maiorQue7 / qtde * 100).toFixed(1)}%
-Aprovados: ${aprovados}
-Desvio padrão: ${dp}
-Maior nota: ${alunoMax} (${max})
-Menor nota: ${alunoMin} (${min})
-      `);
-    }
+      function calculateStandardDeviation(grades, average) {
+        if (grades.length <= 1) return "0 (apenas um aluno)";
+        
+        const squaredDifferences = grades.map(grade => Math.pow(grade - average, 2));
+        const variance = squaredDifferences.reduce((sum, value) => sum + value, 0) / grades.length;
+        return Math.sqrt(variance).toFixed(2);
+      }
+    });
   </script>
-  
 </body>
 </html>
