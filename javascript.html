@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Análise de Notas</title>
+</head>
+<body>
+  <h2>Notas dos Alunos</h2>
+  <label>Quantos alunos? <input type="number" id="qtde" /></label>
+  <button onclick="criarCampos()">Confirmar</button>
+  <div id="form"></div>
+  <button onclick="analisar()">Analisar</button>
+
+  <script>
+    function criarCampos() {
+      const qtde = parseInt(document.getElementById("qtde").value);
+      const form = document.getElementById("form");
+      form.innerHTML = "";
+      for (let i = 0; i < qtde; i++) {
+        form.innerHTML += `
+          <p>Nome: <input type="text" id="nome${i}"> 
+          Nota: <input type="number" id="nota${i}" step="0.1"></p>
+        `;
+      }
+    }
+
+    function analisar() {
+      const qtde = parseInt(document.getElementById("qtde").value);
+      let nomes = [], notas = [];
+      for (let i = 0; i < qtde; i++) {
+        nomes.push(document.getElementById(`nome${i}`).value);
+        notas.push(parseFloat(document.getElementById(`nota${i}`).value));
+      }
+
+      const media = notas.reduce((a,b) => a+b, 0) / notas.length;
+      const acimaMedia = notas.filter(n => n > media).length;
+      const maiorQue7 = notas.filter(n => n > 7).length;
+      const aprovados = notas.filter(n => n >= 6).length;
+
+      const max = Math.max(...notas);
+      const min = Math.min(...notas);
+      const alunoMax = nomes[notas.indexOf(max)];
+      const alunoMin = nomes[notas.indexOf(min)];
+
+      const dp = Math.sqrt(notas.reduce((s, n) => s + Math.pow(n - media, 2), 0) / notas.length).toFixed(2);
+
+      alert(`
+Média: ${media.toFixed(2)}
+Acima da média: ${acimaMedia}
+% com nota > 7: ${(maiorQue7 / qtde * 100).toFixed(1)}%
+Aprovados: ${aprovados}
+Desvio padrão: ${dp}
+Maior nota: ${alunoMax} (${max})
+Menor nota: ${alunoMin} (${min})
+      `);
+    }
+  </script>
+</body>
+</html>
